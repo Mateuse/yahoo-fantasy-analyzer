@@ -59,15 +59,15 @@ func ExchangeAuthCode(authCode string) (string, error) {
 		return "", fmt.Errorf("error decoding response: %w", err)
 	}
 
-	// Save the token response to a JSON file
-	err = SaveTokenToFile("token_response.json", tokenResponse)
-	if err != nil {
-		return "", err
-	}
-
 	userId, err := GetYahooUserProfile(tokenResponse["access_token"].(string))
 	if err != nil {
 		return "Error getting user profile", err
+	}
+
+	// Create a user session with access token
+	err = CreateUserSession(userId, tokenResponse["access_token"].(string), tokenResponse["expires_in"].(int))
+	if err != nil {
+		return "Error creating the user session in redis", err
 	}
 
 	return userId, nil
