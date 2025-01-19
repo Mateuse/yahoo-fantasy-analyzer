@@ -1,0 +1,421 @@
+{
+	"fantasy_content": {
+		"league": {
+			"league_key": "453.l.29317",
+			"league_id": "29317",
+			"name": "Sébastien's Tip-Top League",
+			"url": "https://hockey.fantasysports.yahoo.com/hockey/29317",
+			"logo_url": "https://s.yimg.com/ep/cx/blendr/v2/image-hockey-sticks-png_1721900244286.png",
+			"draft_status": "postdraft",
+			"num_teams": "10",
+			"edit_key": "2025-01-15",
+			"weekly_deadline": "intraday",
+			"league_update_timestamp": "1736930939",
+			"scoring_type": "headpoint",
+			"league_type": "private",
+			"renew": "",
+			"renewed": "",
+			"felo_tier": "silver",
+			"iris_group_chat_id": "",
+			"allow_add_to_dl_extra_pos": "1",
+			"is_pro_league": "0",
+			"is_cash_league": "0",
+			"current_week": "15",
+			"start_week": "1",
+			"start_date": "2024-10-04",
+			"end_week": "24",
+			"end_date": "2025-04-06",
+			"is_plus_league": "0",
+			"game_code": "nhl",
+			"season": "2024",
+			"settings": {
+				"draft_type": "live",
+				"is_auction_draft": "0",
+				"scoring_type": "headpoint",
+				"uses_playoff": "1",
+				"has_playoff_consolation_games": "1",
+				"playoff_start_week": "23",
+				"uses_playoff_reseeding": "1",
+				"uses_lock_eliminated_teams": "1",
+				"num_playoff_teams": "4",
+				"num_playoff_consolation_teams": "4",
+				"has_multiweek_championship": "0",
+				"waiver_type": "R",
+				"waiver_rule": "all",
+				"uses_faab": "0",
+				"draft_time": "1727911800",
+				"draft_pick_time": "60",
+				"post_draft_players": "W",
+				"max_teams": "10",
+				"waiver_time": "2",
+				"trade_end_date": "2025-02-26",
+				"trade_ratify_type": "vote",
+				"trade_reject_time": "1",
+				"player_pool": "ALL",
+				"cant_cut_list": "yahoo",
+				"draft_together": "0",
+				"sendbird_channel_url": "156d9b4e194e420ccb2a2481a0d4fe83",
+				"roster_positions": {
+					"roster_position": [
+						{
+							"position": "C",
+							"position_type": "P",
+							"count": "2",
+							"is_starting_position": "1"
+						},
+						{
+							"position": "LW",
+							"position_type": "P",
+							"count": "2",
+							"is_starting_position": "1"
+						},
+						{
+							"position": "RW",
+							"position_type": "P",
+							"count": "2",
+							"is_starting_position": "1"
+						},
+						{
+							"position": "D",
+							"position_type": "P",
+							"count": "4",
+							"is_starting_position": "1"
+						},
+						{
+							"position": "Util",
+							"position_type": "P",
+							"count": "2",
+							"is_starting_position": "1"
+						},
+						{
+							"position": "G",
+							"position_type": "G",
+							"count": "2",
+							"is_starting_position": "1"
+						},
+						{
+							"position": "BN",
+							"count": "4",
+							"is_starting_position": "0"
+						},
+						{
+							"position": "IR+",
+							"count": "2",
+							"is_starting_position": "0"
+						}
+					]
+				},
+				"stat_categories": {
+					"stats": {
+						"stat": [
+							{
+								"stat_id": "1",
+								"enabled": "1",
+								"name": "Goals",
+								"display_name": "G",
+								"group": "offense",
+								"abbr": "G",
+								"sort_order": "1",
+								"position_type": "P",
+								"stat_position_types": {
+									"stat_position_type": {
+										"position_type": "P"
+									}
+								}
+							},
+							{
+								"stat_id": "2",
+								"enabled": "1",
+								"name": "Assists",
+								"display_name": "A",
+								"group": "offense",
+								"abbr": "A",
+								"sort_order": "1",
+								"position_type": "P",
+								"stat_position_types": {
+									"stat_position_type": {
+										"position_type": "P"
+									}
+								}
+							},
+							{
+								"stat_id": "3",
+								"enabled": "1",
+								"name": "Points",
+								"display_name": "P",
+								"group": "offense",
+								"abbr": "P",
+								"sort_order": "1",
+								"position_type": "P",
+								"stat_position_types": {
+									"stat_position_type": {
+										"position_type": "P"
+									}
+								}
+							},
+							{
+								"stat_id": "4",
+								"enabled": "1",
+								"name": "Plus/Minus",
+								"display_name": "+/-",
+								"group": "offense",
+								"abbr": "+/-",
+								"sort_order": "1",
+								"position_type": "P",
+								"stat_position_types": {
+									"stat_position_type": {
+										"position_type": "P"
+									}
+								}
+							},
+							{
+								"stat_id": "5",
+								"enabled": "1",
+								"name": "Penalty Minutes",
+								"display_name": "PIM",
+								"group": "offense",
+								"abbr": "PIM",
+								"sort_order": "1",
+								"position_type": "P",
+								"stat_position_types": {
+									"stat_position_type": {
+										"position_type": "P"
+									}
+								}
+							},
+							{
+								"stat_id": "8",
+								"enabled": "1",
+								"name": "Powerplay Points",
+								"display_name": "PPP",
+								"group": "offense",
+								"abbr": "PPP",
+								"sort_order": "1",
+								"position_type": "P",
+								"stat_position_types": {
+									"stat_position_type": {
+										"position_type": "P"
+									}
+								}
+							},
+							{
+								"stat_id": "14",
+								"enabled": "1",
+								"name": "Shots on Goal",
+								"display_name": "SOG",
+								"group": "offense",
+								"abbr": "SOG",
+								"sort_order": "1",
+								"position_type": "P",
+								"stat_position_types": {
+									"stat_position_type": {
+										"position_type": "P"
+									}
+								}
+							},
+							{
+								"stat_id": "31",
+								"enabled": "1",
+								"name": "Hits",
+								"display_name": "HIT",
+								"group": "offense",
+								"abbr": "HIT",
+								"sort_order": "1",
+								"position_type": "P",
+								"stat_position_types": {
+									"stat_position_type": {
+										"position_type": "P"
+									}
+								}
+							},
+							{
+								"stat_id": "32",
+								"enabled": "1",
+								"name": "Blocks",
+								"display_name": "BLK",
+								"group": "offense",
+								"abbr": "BLK",
+								"sort_order": "1",
+								"position_type": "P",
+								"stat_position_types": {
+									"stat_position_type": {
+										"position_type": "P"
+									}
+								}
+							},
+							{
+								"stat_id": "19",
+								"enabled": "1",
+								"name": "Wins",
+								"display_name": "W",
+								"group": "goaltending",
+								"abbr": "W",
+								"sort_order": "1",
+								"position_type": "G",
+								"stat_position_types": {
+									"stat_position_type": {
+										"position_type": "G"
+									}
+								}
+							},
+							{
+								"stat_id": "22",
+								"enabled": "1",
+								"name": "Goals Against",
+								"display_name": "GA",
+								"group": "goaltending",
+								"abbr": "GA",
+								"sort_order": "0",
+								"position_type": "G",
+								"stat_position_types": {
+									"stat_position_type": {
+										"position_type": "G"
+									}
+								}
+							},
+							{
+								"stat_id": "25",
+								"enabled": "1",
+								"name": "Saves",
+								"display_name": "SV",
+								"group": "goaltending",
+								"abbr": "SV",
+								"sort_order": "1",
+								"position_type": "G",
+								"stat_position_types": {
+									"stat_position_type": {
+										"position_type": "G"
+									}
+								}
+							},
+							{
+								"stat_id": "27",
+								"enabled": "1",
+								"name": "Shutouts",
+								"display_name": "SHO",
+								"group": "goaltending",
+								"abbr": "SHO",
+								"sort_order": "1",
+								"position_type": "G",
+								"stat_position_types": {
+									"stat_position_type": {
+										"position_type": "G"
+									}
+								}
+							}
+						]
+					},
+					"groups": {
+						"group": [
+							{
+								"group_name": "offense",
+								"group_display_name": "Offense",
+								"group_abbr": "Offense"
+							},
+							{
+								"group_name": "goaltending",
+								"group_display_name": "Goaltending",
+								"group_abbr": "Goaltending"
+							}
+						]
+					}
+				},
+				"stat_modifiers": {
+					"stats": {
+						"stat": [
+							{
+								"stat_id": "1",
+								"value": "2"
+							},
+							{
+								"stat_id": "2",
+								"value": "1"
+							},
+							{
+								"stat_id": "3",
+								"value": "1"
+							},
+							{
+								"stat_id": "4",
+								"value": "0.2"
+							},
+							{
+								"stat_id": "5",
+								"value": "-0.25"
+							},
+							{
+								"stat_id": "8",
+								"value": "0.5"
+							},
+							{
+								"stat_id": "14",
+								"value": "0.25"
+							},
+							{
+								"stat_id": "31",
+								"value": "0.2"
+							},
+							{
+								"stat_id": "32",
+								"value": "0.2"
+							},
+							{
+								"stat_id": "19",
+								"value": "3"
+							},
+							{
+								"stat_id": "22",
+								"value": "-1"
+							},
+							{
+								"stat_id": "25",
+								"value": "0.2"
+							},
+							{
+								"stat_id": "27",
+								"value": "2"
+							}
+						]
+					}
+				},
+				"max_weekly_adds": "2",
+				"uses_median_score": "",
+				"league_premium_features": "",
+				"min_games_played": "3",
+				"week_has_enough_qualifying_days": {
+					"index-1": "1",
+					"index-2": "1",
+					"index-3": "1",
+					"index-4": "1",
+					"index-5": "1",
+					"index-6": "1",
+					"index-7": "1",
+					"index-8": "1",
+					"index-9": "1",
+					"index-10": "1",
+					"index-11": "1",
+					"index-12": "0",
+					"index-13": "1",
+					"index-14": "1",
+					"index-15": "1",
+					"index-16": "1",
+					"index-17": "1",
+					"index-18": "1",
+					"index-19": "1",
+					"index-20": "1",
+					"index-21": "1",
+					"index-22": "1",
+					"index-23": "1",
+					"index-24": "1"
+				}
+			}
+		},
+		"_xmlns:yahoo": "http://www.yahooapis.com/v1/base.rng",
+		"_xmlns": "http://fantasysports.yahooapis.com/fantasy/v2/base.rng",
+		"_xml:lang": "en-US",
+		"_yahoo:uri": "http://fantasysports.yahooapis.com/fantasy/v2/league/453.l.29317/settings",
+		"_time": "46.634912490845ms",
+		"_copyright": "Certain Data by Sportradar, Stats Perform and Rotowire",
+		"_refresh_rate": "60"
+	}
+}

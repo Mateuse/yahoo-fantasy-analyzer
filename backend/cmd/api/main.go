@@ -3,12 +3,12 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"github.com/mateuse/yahoo-fantasy-analyzer/internal/routes"
+	"github.com/mateuse/yahoo-fantasy-analyzer/internal/services"
 )
 
 func main() {
@@ -19,15 +19,17 @@ func main() {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 
-	clientID := os.Getenv("YAHOO_CLIENT_ID")
-	if clientID == "" {
-		log.Fatal("CLIENT_ID environment variable is required")
+	// Connect to MySQL
+	err_sql := services.ConnectToMySQL()
+	if err_sql != nil {
+		log.Fatalf("Failed to connect to MySQL: %v", err_sql)
 	}
 	// Create a new router
 	router := mux.NewRouter()
 
 	routes.RegisterHealthRoutes(router)
 	routes.RegisterAuthRoutes(router)
+	routes.RegisterYahooRoutes(router)
 
 	// Define allowed CORS options
 	corsOptions := handlers.CORS(

@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Go App",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "/Users/emateus/Documents/yahoo-fantasy-analyzer/backend/cmd/api/main.go",
+            "cwd": "/Users/emateus/Documents/yahoo-fantasy-analyzer/backend", // Set working directory
+            "args": [] // Add command-line arguments if needed
+        }
+    ]
+}

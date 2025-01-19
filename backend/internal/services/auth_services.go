@@ -2,18 +2,22 @@ package services
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
+
+	"github.com/mateuse/yahoo-fantasy-analyzer/internal/utils"
 )
 
-func ExchangeAuthCode(authCode string) (string, error) {
+func getYahooAuthDetails() (string, string, string) {
 	clientID := os.Getenv("YAHOO_CLIENT_ID")
 	clientSecret := os.Getenv("YAHOO_CLIENT_SECRET")
-
 	tokenURL := "https://api.login.yahoo.com/oauth2/get_token"
+	return clientID, clientSecret, tokenURL
+}
+
+func ExchangeAuthCode(authCode string) (string, error) {
+	clientID, clientSecret, tokenURL := getYahooAuthDetails()
 
 	payload := map[string]string{
 		"client_id":     clientID,
@@ -37,26 +41,9 @@ func ExchangeAuthCode(authCode string) (string, error) {
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	// Send the request
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	tokenResponse, err := HttpRequest(req)
 	if err != nil {
-		return "", fmt.Errorf("error sending request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("error reading response: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("error response: %s", string(body))
-	}
-
-	var tokenResponse map[string]interface{}
-	if err := json.Unmarshal(body, &tokenResponse); err != nil {
-		return "", fmt.Errorf("error decoding response: %w", err)
+		return "", err
 	}
 
 	userId, err := GetYahooUserProfile(tokenResponse["access_token"].(string))
@@ -65,28 +52,87 @@ func ExchangeAuthCode(authCode string) (string, error) {
 	}
 
 	// Create a user session with access token
-	err = CreateUserSession(userId, tokenResponse["access_token"].(string), tokenResponse["expires_in"].(int))
+	err = CreateUserSession(userId, tokenResponse["access_token"].(string), tokenResponse["expires_in"].(float64))
 	if err != nil {
 		return "Error creating the user session in redis", err
+	}
+
+	err = AddRefreshToken(userId, tokenResponse["refresh_token"].(string))
+	if err != nil {
+		return "Error adding refresh token to db", err
 	}
 
 	return userId, nil
 }
 
-func SaveTokenToFile(filename string, tokenResponse map[string]interface{}) error {
-	// Open or create the file
-	file, err := os.Create(filename)
+func GetAuthToken(sessionId string) (string, error) {
+	session, err := GetUserSession(sessionId)
 	if err != nil {
-		return err
-	}
-	defer file.Close()
+		if utils.IsNotFoundError(err) {
+			accessToken, refreshErr := ExchangeRefreshToken(sessionId)
+			if refreshErr != nil {
+				if utils.IsNotFoundError(refreshErr) {
+					return "", utils.NewNotFoundError(fmt.Sprintf("No token found for user: %s", sessionId))
+				}
+				return "", fmt.Errorf("failed to get refresh token: %w", refreshErr)
+			}
 
-	// Encode the token response as JSON and write it to the file
-	encoder := json.NewEncoder(file)
-	encoder.SetIndent("", "  ") // Format with indentation
-	if err := encoder.Encode(tokenResponse); err != nil {
-		return err
+			return accessToken, nil
+		}
+		return "Error retrieving token", err
 	}
 
-	return nil
+	return session.AccessToken, nil
+}
+
+func GetUserId(sessionId string) (string, error) {
+	session, err := GetUserSession(sessionId)
+	if err != nil {
+		return "Error retrieving token", err
+	}
+
+	return session.UserId, nil
+}
+
+func ExchangeRefreshToken(userId string) (string, error) {
+	clientID, clientSecret, tokenURL := getYahooAuthDetails()
+
+	refreshToken, err := GetRefreshToken(userId)
+	if err != nil {
+		return "", err
+	}
+
+	payload := map[string]string{
+		"client_id":     clientID,
+		"client_secret": clientSecret,
+		"refresh_token": refreshToken,
+		"grant_type":    "refresh_token",
+	}
+
+	// Encode the payload as application/x-www-form-urlencoded
+	formData := bytes.NewBufferString("")
+	for key, value := range payload {
+		formData.WriteString(fmt.Sprintf("%s=%s&", key, value))
+	}
+	formData.Truncate(formData.Len() - 1) // Remove the trailing "&"
+
+	// Make the POST request
+	req, err := http.NewRequest("POST", tokenURL, formData)
+	if err != nil {
+		return "", fmt.Errorf("error creating request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	tokenResponse, err := HttpRequest(req)
+	if err != nil {
+		return "", err
+	}
+
+	// Create a user session with access token
+	err = CreateUserSession(userId, tokenResponse["access_token"].(string), tokenResponse["expires_in"].(float64))
+	if err != nil {
+		return "Error creating the user session in redis", err
+	}
+
+	return tokenResponse["access_token"].(string), nil
 }
