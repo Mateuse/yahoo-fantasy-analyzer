@@ -3,9 +3,9 @@ package handlers
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/mateuse/yahoo-fantasy-analyzer/internal/models"
 	"github.com/mateuse/yahoo-fantasy-analyzer/internal/services"
 	"github.com/mateuse/yahoo-fantasy-analyzer/internal/utils"
 )
@@ -38,12 +38,7 @@ func GetUserLeaguesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Define the TTL as the remaining time until the end of the day
-	now := time.Now()
-	expiry := time.Date(now.Year(), now.Month(), now.Day(), 23, 59, 59, 0, now.Location())
-	ttl := time.Until(expiry)
-
-	err = services.CacheResponse(userSession, "getleagues", leagues, ttl)
+	err = services.CacheResponse(userSession, "getleagues", leagues, utils.GetTTL())
 	if err != nil {
 		fmt.Errorf("%w", err)
 	}
@@ -87,12 +82,7 @@ func GetLeagueInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Define the TTL as the remaining time until the end of the day
-	now := time.Now()
-	expiry := time.Date(now.Year(), now.Month(), now.Day(), 23, 59, 59, 0, now.Location())
-	ttl := time.Until(expiry)
-
-	err = services.CacheResponse(leagueId, "getleague", league, ttl)
+	err = services.CacheResponse(leagueId, "getleague", league, utils.GetTTL())
 	if err != nil {
 		fmt.Errorf("%w", err)
 	}
@@ -115,16 +105,16 @@ func GetLeagueSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// cachedLeagueSettings, err := services.GetCachedResponse(leagueId, "getleaguesettings")
+	cachedLeagueSettings, err := services.GetCachedResponse(leagueId, "getleaguesettings")
 
-	// if err != nil {
-	// 	fmt.Errorf("%w", err)
-	// }
+	if err != nil {
+		fmt.Errorf("%w", err)
+	}
 
-	// if cachedLeagueSettings != nil {
-	// 	utils.CustomResponse(w, http.StatusOK, "Successfully retrieved league settings from cache", cachedLeagueSettings)
-	// 	return
-	// }
+	if cachedLeagueSettings != nil {
+		utils.CustomResponse(w, http.StatusOK, "Successfully retrieved league settings from cache", cachedLeagueSettings)
+		return
+	}
 
 	leagueSettings, err := services.GetLeagueSettings(userSession, leagueId)
 	if err != nil {
@@ -142,12 +132,7 @@ func GetLeagueSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Define the TTL as the remaining time until the end of the day
-	now := time.Now()
-	expiry := time.Date(now.Year(), now.Month(), now.Day(), 23, 59, 59, 0, now.Location())
-	ttl := time.Until(expiry)
-
-	err = services.CacheResponse(leagueId, "getleaguesettings", leagueSettingsMap, ttl)
+	err = services.CacheResponse(leagueId, "getleaguesettings", leagueSettingsMap, utils.GetTTL())
 	if err != nil {
 		fmt.Errorf("%w", err)
 	}
@@ -193,17 +178,13 @@ func GetTeamWeeklyStats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	convertedWeeklyStats := utils.ConvertWeeklyStatsToMap(weeklyStats)
-	// Define the TTL as the remaining time until the end of the day
-	now := time.Now()
-	expiry := time.Date(now.Year(), now.Month(), now.Day(), 23, 59, 59, 0, now.Location())
-	ttl := time.Until(expiry)
 
-	err = services.CacheResponse(teamId, "getweeklystats", convertedWeeklyStats, ttl)
+	err = services.CacheResponse(teamId, "getweeklystats", convertedWeeklyStats, utils.GetTTL())
 	if err != nil {
 		fmt.Errorf("%w", err)
 	}
 
-	utils.CustomResponse(w, http.StatusOK, "Successfully retrieved team weekly stats", convertedWeeklyStats)
+	utils.CustomResponse(w, http.StatusOK, "Successfully retrieved team weekly stats from cache", convertedWeeklyStats)
 }
 
 func GetPlayerStats(w http.ResponseWriter, r *http.Request) {
@@ -232,4 +213,89 @@ func GetPlayerStats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	playerStats, err := services.GetPlayerStats(userSession, playerId)
+	if err != nil {
+		if utils.IsNotFoundError(err) {
+			utils.CustomResponse(w, http.StatusNotFound, err.Error(), nil)
+		} else {
+			utils.CustomResponse(w, http.StatusInternalServerError, "Failed to retrieve player stats", err.Error())
+		}
+		return
+	}
+
+	err = services.CacheResponse(playerId, "getplayerstats", playerStats, utils.GetTTL())
+	if err != nil {
+		fmt.Errorf("%w", err)
+	}
+
+	utils.CustomResponse(w, http.StatusOK, "Successfully retrieved player stats", playerStats)
+}
+
+func GetPlayerRankLeague(w http.ResponseWriter, r *http.Request) {
+	userSession := r.Header.Get("user-session")
+	if userSession == "" {
+		utils.CustomResponse(w, http.StatusUnauthorized, "Missing user session", nil)
+		return
+	}
+
+	vars := mux.Vars(r)
+
+	leagueId := vars["leagueId"]
+	if leagueId == "" {
+		utils.CustomResponse(w, http.StatusBadRequest, "Missing League Id", nil)
+	}
+
+	playerId := vars["playerId"]
+	if playerId == "" {
+		utils.CustomResponse(w, http.StatusBadRequest, "Missing Player Id", nil)
+	}
+
+	cachedPlayerRanks, err := services.GetCachedResponse(playerId+leagueId, "getplayerrank")
+
+	if err != nil {
+		fmt.Errorf("%w", err)
+	}
+
+	if cachedPlayerRanks != nil {
+		utils.CustomResponse(w, http.StatusOK, "Successfully retrieved player ranks from cache", cachedPlayerRanks)
+		return
+	}
+
+	playerRanks, err := services.GetPlayerRankLeague(userSession, leagueId, playerId)
+	if err != nil {
+		if utils.IsNotFoundError(err) {
+			utils.CustomResponse(w, http.StatusNotFound, err.Error(), nil)
+		} else {
+			utils.CustomResponse(w, http.StatusInternalServerError, "Failed to retrieve player stats", err.Error())
+		}
+		return
+	}
+
+	playerRanksResponse := models.PlayerRanksResponse{
+		PlayerID:    playerId,
+		PlayerRanks: playerRanks,
+	}
+
+	err = services.CacheResponse(playerId+leagueId, "getplayerrank", playerRanksResponse, utils.GetTTL())
+	if err != nil {
+		fmt.Errorf("%w", err)
+	}
+
+	utils.CustomResponse(w, http.StatusOK, "Successfully retrieved player ranks for legaue", playerRanksResponse)
+}
+
+func GetAllPlayersYahoo(w http.ResponseWriter, r *http.Request) {
+	userSession := r.Header.Get("user-session")
+	if userSession == "" {
+		utils.CustomResponse(w, http.StatusUnauthorized, "Missing user session", nil)
+		return
+	}
+
+	playerResponse, err := services.GetAllNhlPlayersYahoo(userSession)
+	if err != nil {
+		utils.CustomResponse(w, http.StatusInternalServerError, "Error Getting all nhl players yahoo", err.Error())
+		return
+	}
+
+	utils.CustomResponse(w, http.StatusOK, "Successfully retrieved players from yahoo", playerResponse)
 }

@@ -54,7 +54,6 @@ func GetStatIDToNameMap() map[string]string {
 func GetNHLTeamAbbreviations() map[string]string {
 	return map[string]string{
 		"ANA": "Anaheim Ducks",
-		"ARI": "Arizona Coyotes",
 		"BOS": "Boston Bruins",
 		"BUF": "Buffalo Sabres",
 		"CGY": "Calgary Flames",
@@ -81,6 +80,7 @@ func GetNHLTeamAbbreviations() map[string]string {
 		"STL": "St. Louis Blues",
 		"TBL": "Tampa Bay Lightning",
 		"TOR": "Toronto Maple Leafs",
+		"UTA": "Utah Hockey Club",
 		"VAN": "Vancouver Canucks",
 		"VGK": "Vegas Golden Knights",
 		"WSH": "Washington Capitals",

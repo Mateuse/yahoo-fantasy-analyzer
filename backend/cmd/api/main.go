@@ -30,6 +30,9 @@ func main() {
 	routes.RegisterHealthRoutes(router)
 	routes.RegisterAuthRoutes(router)
 	routes.RegisterYahooRoutes(router)
+	routes.RegisterNHLRoutes(router)
+	routes.RegisterStatsRoutes(router)
+	routes.RegisterSearchRoutes(router)
 
 	// Define allowed CORS options
 	corsOptions := handlers.CORS(

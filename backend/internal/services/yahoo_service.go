@@ -1,12 +1,16 @@
 package services
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"reflect"
 	"strconv"
+	"time"
 
 	"github.com/mateuse/yahoo-fantasy-analyzer/internal/models"
+	"gorm.io/gorm"
 )
 
 func GetUserLeagues(userSession string) (map[string]interface{}, error) {
@@ -127,4 +131,104 @@ func GetTeamWeekStats(sessionId, teamId, week string) (*models.Team, error) {
 	return teamWeekXMLResponse, nil
 }
 
-// func GetPlayerStats(sessionId, playerId string) *models
+func GetPlayerStats(sessionId, playerId string) (*models.Player, error) {
+	// Check if the player stats already exist in the database
+	existingPlayer, err := GetPlayerStatsDB(playerId)
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, fmt.Errorf("failed to query existing player stats: %w", err)
+	}
+
+	// Check if stats exist and were recently updated
+	if existingPlayer != nil {
+		now := time.Now()
+		if now.Before(existingPlayer.NextUpdate) {
+			// Cached stats are still valid
+			var cachedPlayer models.Player
+			err = json.Unmarshal([]byte(existingPlayer.Stats), &cachedPlayer)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal cached player stats: %w", err)
+			}
+			return &cachedPlayer, nil
+		}
+	}
+
+	// If no recent stats or update needed, fetch from the Yahoo API
+	url := fmt.Sprintf("https://fantasysports.yahooapis.com/fantasy/v2/player/%s/stats;type=season", playerId)
+	playerStatsResponse, err := AuthHttpXMLRequest(sessionId, url)
+	if err != nil {
+		return nil, err
+	}
+
+	player, err := MapPlayer(playerStatsResponse)
+	if err != nil {
+		return nil, fmt.Errorf("failed to map player data: %w", err)
+	}
+
+	// Save the updated stats to the database
+	err = SavePlayerStatsDB(*player)
+	if err != nil {
+		return nil, fmt.Errorf("failed to save player stats to the database: %w", err)
+	}
+
+	return player, nil
+}
+
+func GetPlayerRankLeague(sessionId, leagueId, playerId string) ([]models.PlayerRank, error) {
+	url := fmt.Sprintf("https://fantasysports.yahooapis.com/fantasy/v2/leagues;league_keys=%s/players;player_keys=%s;out=ranks;ranks=season,last30days,last14days,last7days,projected_next7days,projected_next14days,projected_season_remaining", leagueId, playerId)
+	playerRankResponse, err := AuthHttpXMLRequest(sessionId, url)
+	if err != nil {
+		return nil, err
+	}
+
+	playerRanks, err := MapToRank(playerRankResponse)
+	if err != nil {
+		return nil, fmt.Errorf("failed to map player data: %w", err)
+	}
+
+	return playerRanks, nil
+}
+
+func GetAllNhlPlayersYahoo(sessionId string) ([]*models.YahooPlayer, error) {
+	gameKey := "453"
+	var allPlayers []*models.YahooPlayer
+	start := 0
+	count := 25
+
+	for {
+		url := fmt.Sprintf("https://fantasysports.yahooapis.com/fantasy/v2/game/%s/players?start=%d&count=%d", gameKey, start, count)
+		log.Println(start)
+		playersResponse, err := AuthHttpXMLRequest(sessionId, url)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch Yahoo players: %v", err)
+		}
+
+		players, err := MapToYahooPlayer(playersResponse)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert Yahoo XML to map: %v", err)
+		}
+
+		var playerPtrs []*models.YahooPlayer
+		for i := range players {
+			playerPtrs = append(playerPtrs, &players[i])
+		}
+
+		// If no players are found, break the loop
+		if len(players) == 0 {
+			break
+		}
+
+		// Append all players to result
+		allPlayers = append(allPlayers, playerPtrs...)
+
+		// Increment pagination
+		start += count
+		time.Sleep(500 * time.Millisecond)
+	}
+
+	err := SaveYahooPlayerToDB(allPlayers)
+	if err != nil {
+		return nil, fmt.Errorf("Error saving players to DB: %w", err)
+	}
+
+	return allPlayers, nil
+}

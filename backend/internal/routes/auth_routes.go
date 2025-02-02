@@ -8,4 +8,5 @@ import (
 func RegisterAuthRoutes(router *mux.Router) {
 	router.HandleFunc("/login", handlers.YahooLogin).Methods("GET")
 	router.HandleFunc("/yahoo-redirect", handlers.YahooCallback).Methods("GET")
+	router.HandleFunc("/clear-cache", handlers.ClearCache).Methods("POST")
 }

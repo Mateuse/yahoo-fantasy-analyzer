@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/mateuse/yahoo-fantasy-analyzer/internal/models"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var DB *gorm.DB
@@ -132,4 +134,157 @@ func GetLeagueSettingsFromDB(leagueId string) (map[string]interface{}, error) {
 	}
 
 	return settings, nil
+}
+
+func SaveScheduleGameInDB(scheduleGame *models.ScheduleGame) error {
+	err := DB.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "id"}}, // Match on the primary key `id`
+		DoNothing: true,                          // Ignore the duplicate
+	}).Create(scheduleGame).Error
+
+	if err != nil {
+		return fmt.Errorf("failed to insert or update data into DB: %w", err)
+	}
+	return nil
+}
+
+func GetTeamNextGameDB(teamAbbrev string) (*models.ScheduleGame, error) {
+	var nextGame models.ScheduleGame
+
+	err := DB.Where("(home_team_abbrev = ? OR away_team_abbrev = ?) AND start_time_utc > ?", teamAbbrev, teamAbbrev, time.Now()).
+		Order("start_time_utc ASC").
+		First(&nextGame).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("no upcoming games found for team %s", teamAbbrev)
+		}
+		return nil, fmt.Errorf("failed to query next game: %s", err)
+	}
+
+	return &nextGame, nil
+}
+
+func SavePlayerStatsDB(player models.Player) error {
+	statsJson, err := json.Marshal(player)
+
+	if err != nil {
+		return fmt.Errorf("failed to marshal player to JSON: %w", err)
+	}
+
+	nextGameTime, err := GetTeamNextGameDate(player.TeamAbbreviation)
+	if err != nil {
+		return fmt.Errorf("failed to get next game date: %w", err)
+	}
+
+	adjustedNextGameTime, err := AdjustTimePST(nextGameTime)
+	if err != nil {
+		return fmt.Errorf("failed to adjust next game time to PST: %w", err)
+	}
+
+	playerStats := models.PlayerStats{
+		PlayerID:         player.PlayerKey,
+		TeamAbbreviation: player.TeamAbbreviation,
+		Stats:            string(statsJson),
+		NextUpdate:       *adjustedNextGameTime,
+	}
+
+	err = DB.Save(&playerStats).Error
+	if err != nil {
+		return fmt.Errorf("failed to save player stats: %w", err)
+	}
+
+	return nil
+}
+
+func GetPlayerStatsDB(playerID string) (*models.PlayerStats, error) {
+	var playerStats models.PlayerStats
+
+	err := DB.First(&playerStats, "player_id = ?", playerID).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, gorm.ErrRecordNotFound
+		}
+		return nil, fmt.Errorf("failed to fetch player stats: %w", err)
+	}
+
+	return &playerStats, nil
+}
+
+func SavePlayerIDMapping(yahooID string, nhlID string, name string, team string) error {
+	playerMapping := models.PlayerIDMapping{
+		YahooPlayerID: yahooID,
+		NHLPlayerID:   nhlID,
+		PlayerName:    name,
+		TeamAbbr:      team,
+	}
+
+	err := DB.Save(&playerMapping).Error
+	if err != nil {
+		return fmt.Errorf("failed to save player ID mapping: %w", err)
+	}
+	return nil
+}
+
+func GetNHLPlayerID(yahooID string) (string, error) {
+	var playerMapping models.PlayerIDMapping
+
+	err := DB.First(&playerMapping, "yahoo_player_id = ?", yahooID).Error
+	if err != nil {
+		return "", fmt.Errorf("failed to find NHL Player ID for Yahoo ID %s: %w", yahooID, err)
+	}
+
+	return playerMapping.NHLPlayerID, nil
+}
+
+func GetNHLPlayerByName
+
+func SaveNhlPlayerToDB(players []*models.NHLPlayer) error {
+	for _, player := range players {
+		err := DB.Where("id = ?", player.ID).FirstOrCreate(player).Error
+		if err != nil {
+			return fmt.Errorf("failed to store player %d: %w", player.ID, err)
+		}
+	}
+
+	return nil
+}
+
+func GetNhlPlayers() ([]models.NHLPlayer, error) {
+	var nhlPlayers []models.NHLPlayer
+	err := DB.Select("id, first_name, last_name").Find(&nhlPlayers).Error
+	if err != nil {
+		return nil, fmt.Errorf("Failed to fetch NHL players: %v", err)
+	}
+
+	return nhlPlayers, nil
+}
+
+func GetYahooPlayers() ([]models.YahooPlayer, error) {
+	var yahooPlayers []models.YahooPlayer
+	err := DB.Select("id, full_name, team_name").Find(&yahooPlayers).Error
+	if err != nil {
+		return nil, fmt.Errorf("Failed to fetch Yahoo players: %v", err)
+	}
+	return yahooPlayers, nil
+}
+
+func SaveYahooPlayerToDB(players []*models.YahooPlayer) error {
+	for _, player := range players {
+		err := DB.Where("id = ?", player.ID).FirstOrCreate(player).Error
+		if err != nil {
+			return fmt.Errorf("failed to store player %s: %w", player.ID, err)
+		}
+	}
+
+	return nil
+}
+
+func SavePlayerIDMappingToDB(mappings []models.PlayerIDMapping) error {
+	if err := DB.Create(&mappings).Error; err != nil {
+		log.Fatalf("Failed to insert player mappings: %v", err)
+		return err
+	}
+
+	return nil
 }

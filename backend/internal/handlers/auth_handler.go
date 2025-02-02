@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"os"
 
 	"github.com/mateuse/yahoo-fantasy-analyzer/internal/services"
+	"github.com/mateuse/yahoo-fantasy-analyzer/internal/utils"
 )
 
 func YahooLogin(w http.ResponseWriter, r *http.Request) {
@@ -60,4 +62,30 @@ func YahooCallback(w http.ResponseWriter, r *http.Request) {
 
 	// Redirect the user to the constructed URL
 	http.Redirect(w, r, redirectURL.String(), http.StatusFound)
+}
+
+type ClearCacheRequest struct {
+	Operation string `json:"operation"` // Optional: Specifies which cache operation to clear
+}
+
+func ClearCache(w http.ResponseWriter, r *http.Request) {
+	var req ClearCacheRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.CustomResponse(w, http.StatusBadRequest, "Invalid request body", err.Error())
+		return
+	}
+
+	err := services.ClearCache(req.Operation)
+	if err != nil {
+		utils.CustomResponse(w, http.StatusInternalServerError, "Failed to clear cache", err.Error())
+		return
+	}
+
+	message := "Cache cleared successfully"
+	if req.Operation != "" {
+		message = "Cache cleared succesfully for operation " + req.Operation
+	}
+
+	utils.CustomResponse(w, http.StatusOK, message, nil)
 }

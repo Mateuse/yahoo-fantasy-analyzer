@@ -108,24 +108,24 @@ type Team struct {
 }
 
 type Player struct {
-	PlayerID           string         `gorm:"column:player_id"`            // Unique player ID
-	PlayerKey          string         `gorm:"column:player_key"`           // Unique player key
-	Name               PlayerName     `gorm:"embedded"`                    // Embedded struct for player name details
-	TeamFullName       string         `gorm:"column:team_full_name"`       // Full team name
-	TeamAbbreviation   string         `gorm:"column:team_abbr"`            // Team abbreviation
-	TeamURL            string         `gorm:"column:team_url"`             // Team's URL
-	UniformNumber      string         `gorm:"column:uniform_number"`       // Player's jersey number
-	DisplayPosition    string         `gorm:"column:display_position"`     // Displayed position (e.g., C, LW, RW, D)
-	HeadshotURL        string         `gorm:"column:headshot_url"`         // URL to the player's headshot
-	ImageURL           string         `gorm:"column:image_url"`            // URL to the player's full image
-	IsUndroppable      bool           `gorm:"column:is_undroppable"`       // Indicates if the player is undroppable
-	PositionType       string         `gorm:"column:position_type"`        // Player position type (e.g., "P" for player)
-	EligiblePositions  []string       `gorm:"-"`                           // List of eligible positions
-	PlayerNotes        bool           `gorm:"column:player_notes"`         // Indicates if the player has notes
-	RecentNotes        bool           `gorm:"column:recent_notes"`         // Indicates if there are recent player notes
-	PlayerNotesUpdated int64          `gorm:"column:player_notes_updated"` // Timestamp of the last notes update
-	Stats              []Stat         `gorm:"-"`                           // Regular stats
-	AdvancedStats      []AdvancedStat `gorm:"-"`                           // Advanced stats
+	PlayerID           string     `gorm:"column:player_id"`            // Unique player ID
+	PlayerKey          string     `gorm:"column:player_key"`           // Unique player key
+	Name               PlayerName `gorm:"embedded"`                    // Embedded struct for player name details
+	TeamFullName       string     `gorm:"column:team_full_name"`       // Full team name
+	TeamAbbreviation   string     `gorm:"column:team_abbr"`            // Team abbreviation
+	TeamURL            string     `gorm:"column:team_url"`             // Team's URL
+	UniformNumber      string     `gorm:"column:uniform_number"`       // Player's jersey number
+	DisplayPosition    string     `gorm:"column:display_position"`     // Displayed position (e.g., C, LW, RW, D)
+	HeadshotURL        string     `gorm:"column:headshot_url"`         // URL to the player's headshot
+	ImageURL           string     `gorm:"column:image_url"`            // URL to the player's full image
+	IsUndroppable      bool       `gorm:"column:is_undroppable"`       // Indicates if the player is undroppable
+	PositionType       string     `gorm:"column:position_type"`        // Player position type (e.g., "P" for player)
+	EligiblePositions  []string   `gorm:"-"`                           // List of eligible positions
+	PlayerNotes        bool       `gorm:"column:player_notes"`         // Indicates if the player has notes
+	RecentNotes        bool       `gorm:"column:recent_notes"`         // Indicates if there are recent player notes
+	PlayerNotesUpdated int        `gorm:"column:player_notes_updated"` // Timestamp of the last notes update
+	Stats              []Stat     `gorm:"-"`                           // Regular stats
+	AdvancedStats      []Stat     `gorm:"-"`                           // Advanced stats
 }
 
 type PlayerName struct {
@@ -141,7 +141,22 @@ type Stat struct {
 	Value  string `gorm:"column:value"`   // Value of the stat
 }
 
-type AdvancedStat struct {
-	StatID string `gorm:"column:stat_id"` // Stat ID
-	Value  string `gorm:"column:value"`   // Value of the stat
+type PlayerStats struct {
+	PlayerID         string    `gorm:"primaryKey;column:player_id"` // Unique identifier for the player
+	TeamAbbreviation string    `gorm:"column:team_abbreviation"`    // Team abbreviation
+	Stats            string    `gorm:"type:json;column:stats"`      // JSON string to store stats
+	NextUpdate       time.Time `gorm:"column:next_update"`
+}
+
+type PlayerRank struct {
+	RankType   string
+	RankValue  int
+	RankSeason string
+}
+
+type YahooPlayer struct {
+	ID          string `gorm:"primaryKey;column:id`
+	FullName    string `gorm:"column:full_name`
+	TeamName    string `gorm:"column:team_name`
+	HeadshotURL string `gorm:"column:headshot_url`
 }

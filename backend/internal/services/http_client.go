@@ -124,3 +124,37 @@ func AuthHttpXMLRequest(sessionId, url string) (map[string]interface{}, error) {
 
 	return nil, fmt.Errorf("request failed: %w", err) //other errors
 }
+
+func GetHttpRequest(url string) (map[string]interface{}, error) {
+	// Create the HTTP GET request
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Execute the HTTP request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Read and validate the response
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("received non-OK HTTP status: %d - %s", resp.StatusCode, body)
+	}
+
+	// Parse the response body as JSON
+	var parsedResponse map[string]interface{}
+	if err := json.Unmarshal(body, &parsedResponse); err != nil {
+		return nil, fmt.Errorf("failed to decode JSON response: %w", err)
+	}
+
+	return parsedResponse, nil
+}
