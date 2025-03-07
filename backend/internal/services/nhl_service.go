@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/mateuse/yahoo-fantasy-analyzer/internal/models"
+	"github.com/mateuse/yahoo-fantasy-analyzer/internal/repositories"
 	"github.com/mateuse/yahoo-fantasy-analyzer/internal/utils"
 )
 
@@ -59,45 +60,12 @@ func GetTeamSchedule(abbr string) error {
 			AwayTeamAbbrev: gameMap["awayTeam"].(map[string]interface{})["abbrev"].(string),
 		}
 
-		if err := SaveScheduleGameInDB(&schedule); err != nil {
+		if err := repositories.SaveScheduleGameInDB(&schedule); err != nil {
 			return fmt.Errorf("failed to save schedule for game ID %d: %w", schedule.ID, err)
 		}
 	}
 
 	return nil
-}
-
-func GetTeamNextGameDate(team_abbrev string) (*time.Time, error) {
-
-	nextGame, err := GetTeamNextGameDB(team_abbrev)
-	if err != nil {
-		return nil, err
-	}
-
-	return &nextGame.StartTimeUTC, nil
-}
-
-func AdjustTimePST(givenTime *time.Time) (*time.Time, error) {
-	if givenTime == nil {
-		return nil, fmt.Errorf("given time is nil")
-	}
-
-	// Load PST timezone
-	location, err := time.LoadLocation("America/Los_Angeles") // PST timezone
-	if err != nil {
-		return nil, fmt.Errorf("failed to load PST location: %w", err)
-	}
-
-	// Convert given time to PST
-	timePST := givenTime.In(location)
-
-	nextDay8AM := time.Date(
-		timePST.Year(), timePST.Month(), timePST.Day()+1,
-		8, 0, 0, 0,
-		location,
-	)
-
-	return &nextDay8AM, nil
 }
 
 func GetTeamRoster(teamAbrev, season string) ([]*models.NHLPlayer, error) {
@@ -144,7 +112,7 @@ func GetTeamRoster(teamAbrev, season string) ([]*models.NHLPlayer, error) {
 		}
 	}
 
-	err = SaveNhlPlayerToDB(players)
+	err = repositories.SaveNhlPlayerToDB(players)
 	if err != nil {
 		return nil, fmt.Errorf("failed to save players: %w", err)
 	}
@@ -155,7 +123,7 @@ func GetTeamRoster(teamAbrev, season string) ([]*models.NHLPlayer, error) {
 func MapNhlPlayerToYahoo() error {
 	var mappings []models.PlayerIDMapping
 
-	nhlPlayers, err := GetNhlPlayers()
+	nhlPlayers, err := repositories.GetNhlPlayers()
 	if err != nil {
 		return err
 	}
@@ -165,7 +133,7 @@ func MapNhlPlayerToYahoo() error {
 		nhlPlayerMap[fullName] = nhlPlayer.ID
 	}
 
-	yahooPlayers, err := GetYahooPlayers()
+	yahooPlayers, err := repositories.GetYahooPlayers()
 	if err != nil {
 		return err
 	}
@@ -181,10 +149,38 @@ func MapNhlPlayerToYahoo() error {
 		}
 	}
 
-	err = SavePlayerIDMappingToDB(mappings)
+	err = repositories.SavePlayerIDMappingToDB(mappings)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func GetPlayerGameStatsNHL(playerId, season string) ([]*models.PlayerGameStat, error) {
+	url := fmt.Sprintf("https://api-web.nhle.com/v1/player/%s/game-log/%s/2", playerId, season)
+
+	response, err := GetHttpRequest(url)
+	if err != nil {
+		return nil, err
+	}
+
+	var playerGameStats []*models.PlayerGameStat
+
+	if gameLog, exists := response["gameLog"].([]interface{}); exists {
+		for _, game := range gameLog {
+			game, err := MapNHLGameStat(game.(map[string]interface{}))
+			if err != nil {
+				return nil, err
+			}
+			game.PlayerID = playerId
+			playerGameStats = append(playerGameStats, game)
+		}
+	}
+	err = repositories.SavePlayerGameStats(playerGameStats)
+	if err != nil {
+		return nil, err
+	}
+
+	return playerGameStats, nil
 }

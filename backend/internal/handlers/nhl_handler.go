@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/mateuse/yahoo-fantasy-analyzer/internal/repositories"
 	"github.com/mateuse/yahoo-fantasy-analyzer/internal/services"
 	"github.com/mateuse/yahoo-fantasy-analyzer/internal/utils"
 )
@@ -22,7 +23,7 @@ func GetTeamNextGameDate(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	team := vars["team"]
 
-	nextGame, err := services.GetTeamNextGameDate(team)
+	nextGame, err := repositories.GetTeamNextGameDate(team)
 	if err != nil {
 		utils.CustomResponse(w, http.StatusInternalServerError, "Error", err)
 		return
@@ -32,7 +33,26 @@ func GetTeamNextGameDate(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetPlayerGameStats(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playerId := vars["playerId"]
+	season := vars["season"]
 
+	if playerId == "" {
+		utils.CustomResponse(w, http.StatusBadRequest, "Missing player id", nil)
+		return
+	}
+
+	if season == "" {
+		season = utils.GetCurrentNhlSeason()
+	}
+
+	playerGameStats, err := services.GetPlayerGameStatsNHL(playerId, season)
+	if err != nil {
+		utils.CustomResponse(w, http.StatusInternalServerError, "Error getting player game stats", err)
+		return
+	}
+
+	utils.CustomResponse(w, http.StatusOK, "Successfully retrieved player game stats", playerGameStats)
 }
 
 func GetTeamRoster(w http.ResponseWriter, r *http.Request) {

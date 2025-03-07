@@ -126,12 +126,13 @@ type Player struct {
 	PlayerNotesUpdated int        `gorm:"column:player_notes_updated"` // Timestamp of the last notes update
 	Stats              []Stat     `gorm:"-"`                           // Regular stats
 	AdvancedStats      []Stat     `gorm:"-"`                           // Advanced stats
+	NextUpdate         time.Time  `gorm:"column:next_update"`
 }
 
 type PlayerName struct {
-	Full       string `gorm:"column:full_name"`   // Full name
-	First      string `gorm:"column:first_name"`  // First name
-	Last       string `gorm:"column:last_name"`   // Last name
+	FullName   string `gorm:"column:full_name"`   // Full name
+	FirstName  string `gorm:"column:first_name"`  // First name
+	LastName   string `gorm:"column:last_name"`   // Last name
 	AsciiFirst string `gorm:"column:ascii_first"` // ASCII version of the first name
 	AsciiLast  string `gorm:"column:ascii_last"`  // ASCII version of the last name
 }
@@ -155,8 +156,45 @@ type PlayerRank struct {
 }
 
 type YahooPlayer struct {
-	ID          string `gorm:"primaryKey;column:id`
-	FullName    string `gorm:"column:full_name`
-	TeamName    string `gorm:"column:team_name`
-	HeadshotURL string `gorm:"column:headshot_url`
+	ID          string `gorm:"primaryKey;column:id"`
+	FullName    string `gorm:"column:full_name"`
+	TeamName    string `gorm:"column:team_name"`
+	HeadshotURL string `gorm:"column:headshot_url"`
+}
+
+type TeamWeeklyData struct {
+	TeamID          string `gorm:"column:team_id"`
+	Week            int    `gorm:"column:week"`
+	ProjectedPoints string `gorm:"column:projected_points"`
+	FinalPoints     string `gorm:"column:final_points"`
+}
+
+type LeagueTeam struct {
+	TeamId   string `gorm:"primaryKey;column:team_id"`
+	LeagueId string `gorm:"column:league_id"`
+	Name     string `gorm:"column:name"`
+	Logo     string `gorm:"column:logo"`
+}
+
+type Matchup struct {
+	MatchupKey  string `gorm:"column:matchup_key;primaryKey"`
+	Week        string `gorm:"column:week`
+	WinningTeam string `gorm:"column:winning_team`
+	LosingTeam  string `gorm:"column:losing_team`
+}
+
+type TeamWeeklyStats struct {
+	ID      string  `gorm:"primaryKey;column:id"`
+	Week    string  `gorm:"column:week"`
+	TeamKey string  `gorm:"column:team_key"`
+	Stats   []Stat  `gorm:"column:stats"`
+	Points  float64 `gorm:"column:points"`
+}
+
+type StatWinnerWeeklyMatchup struct {
+	Week           string `gorm:"column:week;primaryKey"`
+	MatchupKey     string `gorm:"column:matchup_key;primaryKey"`
+	StatID         string `gorm:"column:stat_id;primaryKey"`
+	WinningTeamKey string `gorm:"column:winning_team_key"`
+	IsTied         bool   `gorm:"column:is_tied"`
 }

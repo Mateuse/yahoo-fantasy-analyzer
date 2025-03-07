@@ -13,4 +13,6 @@ func RegisterYahooRoutes(router *mux.Router) {
 	router.HandleFunc("/get-player-stats/player/{playerId}", handlers.GetPlayerStats).Methods("GET")
 	router.HandleFunc("/get-player-rank/league/{leagueId}/player/{playerId}", handlers.GetPlayerRankLeague).Methods("GET")
 	router.HandleFunc("/get-all-players", handlers.GetAllPlayersYahoo).Methods("GET")
+	router.HandleFunc("/get-league-teams/league/{leagueId}", handlers.GetAllTeamsInLeague).Methods("GET")
+	router.HandleFunc("/get-fteam-matchups/team/{teamId}", handlers.GetFTeamMatchups).Methods("GET")
 }

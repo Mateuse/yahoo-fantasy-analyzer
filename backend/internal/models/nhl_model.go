@@ -43,3 +43,28 @@ type NHLPlayer struct {
 	BirthState     string `gorm:"column:birth_state"`
 	Team           string `gorm:"column:team"`
 }
+
+type PlayerGameStat struct {
+	GameID            string `json:"gameId"`
+	PlayerID          string `json:"playerId"`
+	TeamAbbrev        string `json:"teamAbbrev"`
+	HomeRoadFlag      string `json:"homeRoadFlag"`
+	GameDate          string `json:"gameDate"`
+	Goals             int    `json:"goals"`
+	Assists           int    `json:"assists"`
+	Team              string `json:"team"`
+	Opponent          string `json:"opponent"`
+	Points            int    `json:"points"`
+	PlusMinus         int    `json:"plusMinus"`
+	PowerPlayGoals    int    `json:"powerPlayGoals"`
+	PowerPlayPoints   int    `json:"powerPlayPoints"`
+	GameWinningGoals  int    `json:"gameWinningGoals"`
+	OTGoals           int    `json:"otGoals"`
+	Shots             int    `json:"shots"`
+	Shifts            int    `json:"shifts"`
+	ShorthandedGoals  int    `json:"shorthandedGoals"`
+	ShorthandedPoints int    `json:"shorthandedPoints"`
+	OpponentAbbrev    string `json:"opponentAbbrev"`
+	PIM               int    `json:"pim"`
+	TOI               string `json:"toi"`
+}

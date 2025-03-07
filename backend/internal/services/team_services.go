@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/mateuse/yahoo-fantasy-analyzer/internal/repositories"
 	"github.com/mateuse/yahoo-fantasy-analyzer/internal/utils"
 )
 
@@ -35,7 +36,7 @@ func GetTeamWeeklyStats(sessionId, teamId string) (map[int]map[string]string, er
 	// Loop through each week from 1 to currentWeek
 	for week := 1; week <= currentWeek; week++ {
 		// Check if data exists in the database
-		projectedPoints, finalPoints, err := GetTeamWeekData(teamId, week)
+		projectedPoints, finalPoints, err := repositories.GetTeamWeekData(teamId, week)
 		if err != nil {
 			return nil, err
 		}
@@ -62,7 +63,7 @@ func GetTeamWeeklyStats(sessionId, teamId string) (map[int]map[string]string, er
 		}
 
 		// Insert new data into the database
-		err = AddTeamWeekData(teamId, week, teamWeekly.ProjectedPoints, teamWeekly.FinalPoints)
+		err = repositories.AddTeamWeekData(teamId, week, teamWeekly.ProjectedPoints, teamWeekly.FinalPoints)
 		if err != nil {
 			return nil, err
 		}

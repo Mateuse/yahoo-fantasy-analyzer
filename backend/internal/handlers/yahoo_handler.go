@@ -184,7 +184,7 @@ func GetTeamWeeklyStats(w http.ResponseWriter, r *http.Request) {
 		fmt.Errorf("%w", err)
 	}
 
-	utils.CustomResponse(w, http.StatusOK, "Successfully retrieved team weekly stats from cache", convertedWeeklyStats)
+	utils.CustomResponse(w, http.StatusOK, "Successfully retrieved team weekly stats", convertedWeeklyStats)
 }
 
 func GetPlayerStats(w http.ResponseWriter, r *http.Request) {
@@ -298,4 +298,51 @@ func GetAllPlayersYahoo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.CustomResponse(w, http.StatusOK, "Successfully retrieved players from yahoo", playerResponse)
+}
+
+func GetAllTeamsInLeague(w http.ResponseWriter, r *http.Request) {
+	userSession := r.Header.Get("user-session")
+	if userSession == "" {
+		utils.CustomResponse(w, http.StatusUnauthorized, "Missing user session", nil)
+		return
+	}
+
+	vars := mux.Vars(r)
+
+	leagueId := vars["leagueId"]
+	if leagueId == "" {
+		utils.CustomResponse(w, http.StatusBadRequest, "Missing League Id", nil)
+	}
+
+	fantasyTeams, err := services.GetAllTeamsInLeague(userSession, leagueId)
+	if err != nil {
+		utils.CustomResponse(w, http.StatusInternalServerError, "Error Fetching League Teams", err)
+		return
+	}
+
+	utils.CustomResponse(w, http.StatusOK, "Successfully retrieved teams from league", fantasyTeams)
+}
+
+func GetFTeamMatchups(w http.ResponseWriter, r *http.Request) {
+	userSession := r.Header.Get("user-session")
+	if userSession == "" {
+		utils.CustomResponse(w, http.StatusUnauthorized, "Missing user session", nil)
+		return
+	}
+
+	vars := mux.Vars(r)
+
+	teamId := vars["teamId"]
+	if teamId == "" {
+		utils.CustomResponse(w, http.StatusBadRequest, "Missing team id", nil)
+		return
+	}
+
+	matchups, err := services.GetFTeamMatchups(userSession, teamId)
+	if err != nil {
+		utils.CustomResponse(w, http.StatusInternalServerError, "Error retrieving Team Matchups", nil)
+		return
+	}
+
+	utils.CustomResponse(w, http.StatusOK, "Successfully retrieved team matchups", matchups)
 }

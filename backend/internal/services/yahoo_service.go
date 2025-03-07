@@ -1,7 +1,6 @@
 package services
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -10,6 +9,8 @@ import (
 	"time"
 
 	"github.com/mateuse/yahoo-fantasy-analyzer/internal/models"
+	"github.com/mateuse/yahoo-fantasy-analyzer/internal/repositories"
+	"github.com/mateuse/yahoo-fantasy-analyzer/internal/utils"
 	"gorm.io/gorm"
 )
 
@@ -43,7 +44,7 @@ func GetLeague(userSession, leagueId string) (map[string]interface{}, error) {
 
 func GetLeagueSettings(userSession, leagueId string) (*models.League, error) {
 	// Check the database for existing league settings
-	dbSettings, err := GetLeagueSettingsFromDB(leagueId)
+	dbSettings, err := repositories.GetLeagueSettingsFromDB(leagueId)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching league settings from database: %w", err)
 	}
@@ -54,7 +55,14 @@ func GetLeagueSettings(userSession, leagueId string) (*models.League, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error converting DB settings to league object: %w", err)
 		}
-		return cachedSettings, nil
+
+		startOfCurrentWeek := utils.GetStartOfCurrentWeek()
+
+		//If LastUpdated is after the start of the current week, return cached setting
+
+		if cachedSettings.LastUpdated.After(startOfCurrentWeek) {
+			return cachedSettings, nil
+		}
 	}
 
 	// Make API call if not in cache
@@ -71,7 +79,7 @@ func GetLeagueSettings(userSession, leagueId string) (*models.League, error) {
 	}
 
 	// Save settings to the database for future use
-	err = SaveLeagueSettingsToDB(leagueId, leagueSettingsResponse)
+	err = repositories.SaveLeagueSettingsToDB(leagueId, leagueSettingsResponse)
 	if err != nil {
 		return nil, fmt.Errorf("error saving league settings to database: %w", err)
 	}
@@ -133,7 +141,7 @@ func GetTeamWeekStats(sessionId, teamId, week string) (*models.Team, error) {
 
 func GetPlayerStats(sessionId, playerId string) (*models.Player, error) {
 	// Check if the player stats already exist in the database
-	existingPlayer, err := GetPlayerStatsDB(playerId)
+	existingPlayer, err := repositories.GetPlayerStatsDB(playerId)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, fmt.Errorf("failed to query existing player stats: %w", err)
 	}
@@ -143,12 +151,7 @@ func GetPlayerStats(sessionId, playerId string) (*models.Player, error) {
 		now := time.Now()
 		if now.Before(existingPlayer.NextUpdate) {
 			// Cached stats are still valid
-			var cachedPlayer models.Player
-			err = json.Unmarshal([]byte(existingPlayer.Stats), &cachedPlayer)
-			if err != nil {
-				return nil, fmt.Errorf("failed to unmarshal cached player stats: %w", err)
-			}
-			return &cachedPlayer, nil
+			return existingPlayer, nil
 		}
 	}
 
@@ -165,7 +168,7 @@ func GetPlayerStats(sessionId, playerId string) (*models.Player, error) {
 	}
 
 	// Save the updated stats to the database
-	err = SavePlayerStatsDB(*player)
+	err = repositories.SavePlayerStatsDB(*player)
 	if err != nil {
 		return nil, fmt.Errorf("failed to save player stats to the database: %w", err)
 	}
@@ -196,7 +199,6 @@ func GetAllNhlPlayersYahoo(sessionId string) ([]*models.YahooPlayer, error) {
 
 	for {
 		url := fmt.Sprintf("https://fantasysports.yahooapis.com/fantasy/v2/game/%s/players?start=%d&count=%d", gameKey, start, count)
-		log.Println(start)
 		playersResponse, err := AuthHttpXMLRequest(sessionId, url)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch Yahoo players: %v", err)
@@ -225,10 +227,71 @@ func GetAllNhlPlayersYahoo(sessionId string) ([]*models.YahooPlayer, error) {
 		time.Sleep(500 * time.Millisecond)
 	}
 
-	err := SaveYahooPlayerToDB(allPlayers)
+	err := repositories.SaveYahooPlayerToDB(allPlayers)
 	if err != nil {
-		return nil, fmt.Errorf("Error saving players to DB: %w", err)
+		return nil, fmt.Errorf("error saving players to DB: %w", err)
 	}
 
 	return allPlayers, nil
+}
+
+func GetAllTeamsInLeague(sessionId, leagueId string) ([]models.LeagueTeam, error) {
+
+	leagueTeamsFromDB, err := repositories.GetAllLeagueTeamsFromDB(leagueId)
+	if err != nil {
+		log.Printf("Failed to get league teams from DB: %w", err)
+	}
+
+	if leagueTeamsFromDB != nil {
+		if len(leagueTeamsFromDB) > 0 {
+			return leagueTeamsFromDB, nil
+		}
+	}
+
+	url := fmt.Sprintf("https://fantasysports.yahooapis.com/fantasy/v2/league/%s/teams", leagueId)
+	leagueTeamResponse, err := AuthHttpXMLRequest(sessionId, url)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch players from league: %w", err)
+	}
+
+	teams, err := MapFantasyTeamsFromLeague(leagueTeamResponse)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert api Response from league: %w", err)
+	}
+
+	err = repositories.SaveLeagueTeamsToDB(teams)
+	if err != nil {
+		log.Printf("Failed to save teams in DB: %w", err)
+	}
+
+	return teams, nil
+}
+
+type TeamMatchupResponse struct {
+	Matchups    []*models.Matchup                 `json:"matchups"`
+	TeamStats   []*models.TeamWeeklyStats         `json:"teamStats"`
+	StatWinners []*models.StatWinnerWeeklyMatchup `json:"statWinners"`
+}
+
+func GetFTeamMatchups(sessionId, teamId string) (*TeamMatchupResponse, error) {
+	url := fmt.Sprintf("https://fantasysports.yahooapis.com/fantasy/v2/team/%s/matchups", teamId)
+	teamMatchupResponse, err := AuthHttpXMLRequest(sessionId, url)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch matchups for team: %w", err)
+	}
+
+	matchups, teamStats, statWinners, err := MapTeamMatchups(teamMatchupResponse)
+	if err != nil {
+		return nil, fmt.Errorf("failed to map matchups for team: %w", err)
+	}
+
+	if err := repositories.SaveTeamMatchups(matchups, teamStats, statWinners); err != nil {
+		return nil, fmt.Errorf("failed to save matchups to DB: %w", err)
+	}
+
+	return &TeamMatchupResponse{
+		Matchups:    matchups,
+		TeamStats:   teamStats,
+		StatWinners: statWinners,
+	}, nil
 }

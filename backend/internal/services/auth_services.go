@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/mateuse/yahoo-fantasy-analyzer/internal/repositories"
 	"github.com/mateuse/yahoo-fantasy-analyzer/internal/utils"
 )
 
@@ -57,7 +58,7 @@ func ExchangeAuthCode(authCode string) (string, error) {
 		return "Error creating the user session in redis", err
 	}
 
-	err = AddRefreshToken(userId, tokenResponse["refresh_token"].(string))
+	err = repositories.AddRefreshToken(userId, tokenResponse["refresh_token"].(string))
 	if err != nil {
 		return "Error adding refresh token to db", err
 	}
@@ -97,7 +98,7 @@ func GetUserId(sessionId string) (string, error) {
 func ExchangeRefreshToken(userId string) (string, error) {
 	clientID, clientSecret, tokenURL := getYahooAuthDetails()
 
-	refreshToken, err := GetRefreshToken(userId)
+	refreshToken, err := repositories.GetRefreshToken(userId)
 	if err != nil {
 		return "", err
 	}

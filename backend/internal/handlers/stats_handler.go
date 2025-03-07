@@ -22,12 +22,14 @@ func GetFantasyLeaguePlayerStats(w http.ResponseWriter, r *http.Request) {
 
 	if leagueId == "" {
 		utils.CustomResponse(w, http.StatusBadRequest, "Missing League Id", nil)
+		return
 	}
 
 	playerId := vars["playerId"]
 
 	if playerId == "" {
 		utils.CustomResponse(w, http.StatusBadRequest, "Missing Player Id", nil)
+		return
 	}
 
 	cachedPlayerStats, err := services.GetCachedResponse(playerId+leagueId, "getplayerstats")
@@ -69,4 +71,33 @@ func GetFantasyLeaguePlayerStats(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.CustomResponse(w, http.StatusOK, "Successfully retrieved player stats for league", response)
+}
+
+func GetProjectedVsActual(w http.ResponseWriter, r *http.Request) {
+
+	userSession := r.Header.Get("user-session")
+	if userSession == "" {
+		utils.CustomResponse(w, http.StatusUnauthorized, "Missing user session", nil)
+		return
+	}
+
+	vars := mux.Vars(r)
+	fTeamId := vars["fTeamId"]
+
+	if fTeamId == "" {
+		utils.CustomResponse(w, http.StatusBadRequest, "Missing Fantasy Team Id", nil)
+		return
+	}
+
+	cachedStats, err := services.GetCachedResponse(fTeamId, "getProjectedvsExpected")
+
+	if err != nil {
+		fmt.Errorf("%w", err)
+	}
+
+	if cachedStats != nil {
+		utils.CustomResponse(w, http.StatusOK, "Successfully retrieved Projected vs Expected Stats from cache", cachedStats)
+		return
+	}
+
 }

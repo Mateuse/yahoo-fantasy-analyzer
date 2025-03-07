@@ -40,3 +40,8 @@ func GetLeaguePlayerStats(statModifiers []models.StatModifier, player models.Pla
 
 	return &player, totalPoints, nil
 }
+
+func GetProjectedvsExpected(userSession, fTeamId string) ([]models.ProjectedVsActualStats, error) {
+
+	return nil, nil
+}
